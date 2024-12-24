@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Giveaway Contest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        #attemptsLeft {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+      <h1>Giveaway Contest</h1>
+      <form id="codeForm">
+          <div class="form-group">
+              <label for="phone">Phone Number:</label>
+              <input type="tel" id="phone" required pattern="[6-9][0-9]{9}" title="Enter valid Indian mobile number">
+          </div>
+          <div class="form-group">
+              <label for="code">Label Code:</label>
+              <input type="text" id="code" required>
+          </div>
+          <button type="submit">Submit Code</button>
+      </form>
+      <div id="attemptsLeft"></div>
+  </div>
+
+  <script>
+      if (!localStorage.getItem('validCodes')) {
+          localStorage.setItem('validCodes', JSON.stringify(['CODE123', 'CODE456', 'CODE789']));
+      }
+      if (!localStorage.getItem('submissions')) {
+          localStorage.setItem('submissions', JSON.stringify({}));
+      }
+      if (!localStorage.getItem('attempts')) {
+          localStorage.setItem('attempts', JSON.stringify({}));
+      }
+
+      function validateIndianPhoneNumber(phone) {
+          return /^[6-9]\d{9}$/.test(phone);
+      }
+
+      document.getElementById('codeForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const phone = document.getElementById('phone').value;
+          const code = document.getElementById('code').value.toUpperCase();
+          
+          if (!validateIndianPhoneNumber(phone)) {
+              showMessage('Please enter a valid Indian mobile number', 'error');
+              return;
+          }
+
+          const submissions = JSON.parse(localStorage.getItem('submissions'));
+          const validCodes = JSON.parse(localStorage.getItem('validCodes'));
+          const attempts = JSON.parse(localStorage.getItem('attempts'));
+
+          if (submissions[phone]) {
+              showMessage('You have already submitted a code', 'error');
+              return;
+          }
+
+          if (!attempts[phone]) {
+              attempts[phone] = 0;
+          }
+
+          if (validCodes.includes(code)) {
+              submissions[phone] = code;
+              localStorage.setItem('submissions', JSON.stringify(submissions));
+              showMessage('Code submitted successfully!', 'success');
+              this.reset();
+          } else {
+              attempts[phone]++;
+              localStorage.setItem('attempts', JSON.stringify(attempts));
+              
+              if (attempts[phone] >= 3) {
+                  // Only submit phone number after 3 failed attempts
+                  submissions[phone] = 'NO_CODE';  // Indicating failed attempts
+                  localStorage.setItem('submissions', JSON.stringify(submissions));
+                  showMessage('Maximum attempts reached. Your participation has been recorded.', 'error');
+                  this.reset();
+              } else {
+                  const attemptsLeft = 3 - attempts[phone];
+                  showMessage(`Invalid code. You have ${attemptsLeft} attempts left.`, 'error');
+                  document.getElementById('attemptsLeft').textContent = `Attempts remaining: ${attemptsLeft}`;
+              }
+          }
+      });
+
+      function showMessage(text, type) {
+          const message = document.createElement('div');
+          message.className = `message ${type}`;
+          message.textContent = text;
+          document.querySelector('.container').insertBefore(message, document.querySelector('form').nextSibling);
+          setTimeout(() => message.remove(), 3000);
+      }
+  </script>
+</body>
+</html>
